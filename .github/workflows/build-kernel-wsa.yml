@@ -26,6 +26,7 @@ jobs:
     with:
       arch: ${{ matrix.arch }}
       version: ${{ matrix.version }}
+      build_lkm: true
 
   check_build:
     if: (github.event_name == 'pull_request' && !github.event.pull_request.draft) || github.ref == 'refs/heads/checkci'
@@ -36,4 +37,3 @@ jobs:
     with:
       arch: ${{ matrix.arch }}
       version: "5.15.104.4"
-      build_lkm: true
