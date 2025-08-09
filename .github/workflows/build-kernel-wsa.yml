@@ -36,3 +36,4 @@ jobs:
     with:
       arch: ${{ matrix.arch }}
       version: "5.15.104.4"
+      build_lkm: true
