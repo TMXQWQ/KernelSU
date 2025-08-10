@@ -41,7 +41,7 @@ on:
       embed_ksud:
         required: false
         type: string
-        default: ksud-aarch64-linux-android
+        default: ksud-x86_64-linux-android
         description: >
           Artifact name of prebuilt ksud to be embedded
           for example: ksud-aarch64-linux-android
@@ -150,11 +150,11 @@ jobs:
 
       - name: Symbol magic
         run: |
-          echo "[+] Export all symbol from abi_gki_aarch64.xml"
+          echo "[+] Export all symbol from abi_gki_x86_64.xml"
           COMMON_ROOT=$GITHUB_WORKSPACE/android-kernel/common
           KSU_ROOT=$GITHUB_WORKSPACE/KernelSU
-          ABI_XML=$COMMON_ROOT/android/abi_gki_aarch64.xml
-          SYMBOL_LIST=$COMMON_ROOT/android/abi_gki_aarch64
+          ABI_XML=$COMMON_ROOT/android/abi_gki_x86_64.xml
+          SYMBOL_LIST=$COMMON_ROOT/android/abi_gki_x86_64
           # python3 $KSU_ROOT/scripts/abi_gki_all.py $ABI_XML > $SYMBOL_LIST
           echo "[+] Add KernelSU symbols"
           cat $KSU_ROOT/kernel/export_symbol.txt | awk '{sub("[ \t]+","");print "  "$0}' >> $SYMBOL_LIST
@@ -163,7 +163,7 @@ jobs:
         if: inputs.use_cache == true
         uses: hendrikmuhs/ccache-action@v1
         with:
-          key: gki-kernel-aarch64-${{ inputs.version_name }}
+          key: gki-kernel-x86_64-${{ inputs.version_name }}
           max-size: 2G
           save: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
 
@@ -176,7 +176,7 @@ jobs:
           ast-grep -U -p '$$$ check_exports($$$) {$$$}' -r '' common/scripts/mod/modpost.c
           ast-grep -U -p 'check_exports($$$);' -r '' common/scripts/mod/modpost.c
           sed -i '/config KSU/,/help/{s/default y/default m/}' common/drivers/kernelsu/Kconfig
-          echo "drivers/kernelsu/kernelsu.ko" >> common/android/gki_aarch64_modules
+          echo "drivers/kernelsu/kernelsu.ko" >> common/android/gki_x86_64_modules
 
           # bazel build, android14-5.15, android14-6.1 use bazel
           if [ ! -e build/build.sh ]; then
@@ -200,7 +200,7 @@ jobs:
         run: |
           # Fix bazel build error
           if [ -f common/BUILD.bazel ]; then
-            [ -f android/abi_gki_protected_exports_aarch64 ] || sed -i '/^[[:space:]]*"protected_exports_list"[[:space:]]*:[[:space:]]*"android\/abi_gki_protected_exports_aarch64",$/d' common/BUILD.bazel
+            [ -f android/abi_gki_protected_exports_x86_64 ] || sed -i '/^[[:space:]]*"protected_exports_list"[[:space:]]*:[[:space:]]*"android\/abi_gki_protected_exports_aarch64",$/d' common/BUILD.bazel
           fi
           
           rm common/android/abi_gki_protected_exports_* || echo "No protected exports!"
@@ -219,7 +219,7 @@ jobs:
           if [ -e build/build.sh ]; then
             LTO=thin BUILD_CONFIG=common/build.config.gki.x86_64 build/build.sh CC="/usr/bin/ccache clang"
           else
-            tools/bazel run --disk_cache=/home/runner/.cache/bazel --config=fast --config=stamp --lto=thin //common:kernel_aarch64_dist -- --dist_dir=dist
+            tools/bazel run --disk_cache=/home/runner/.cache/bazel --config=fast --config=stamp --lto=thin //common:kernel_x86_64_dist -- --dist_dir=dist
           fi
 
       - name: Prepare artifacts
@@ -245,19 +245,19 @@ jobs:
         uses: actions/upload-artifact@v4
         if: ${{ inputs.build_lkm == false }}
         with:
-          name: Image-${{ inputs.version_name }}_${{ inputs.os_patch_level }}
+          name: Image-${{ inputs.version_name }}_${{ inputs.os_patch_level }}-x86_64
           path: ./output/*
 
       - name: Upload AnyKernel3
         if: ${{ inputs.build_lkm == false }}
         uses: actions/upload-artifact@v4
         with:
-          name: AnyKernel3-${{ inputs.version_name }}_${{ inputs.os_patch_level }}
+          name: AnyKernel3-${{ inputs.version_name }}_${{ inputs.os_patch_level }}-x86_64
           path: ./AnyKernel3/*
 
       - name: Upload LKM
         uses: actions/upload-artifact@v4
         if: ${{ inputs.build_lkm == true }}
         with:
-          name: ${{ inputs.version }}-lkm
+          name: ${{ inputs.version }}-lkm-x86_64
           path: ./output/*_kernelsu.ko
